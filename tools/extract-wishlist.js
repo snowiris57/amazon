@@ -49,28 +49,41 @@
     try { return new URL(href, location.origin).href.split("?")[0]; }
     catch { return href; }
   }
+  // 要素からテキスト（title属性 or 表示文字）を安全に取り出す。null でも落ちない。
+  function textOf(node) {
+    if (!node) return "";
+    return ((node.getAttribute && node.getAttribute("title")) || node.textContent || "").trim();
+  }
+
   function extractItem(el) {
-    // タイトルとURL
-    const titleEl =
-      el.querySelector('a[id^="itemName_"]') ||
-      el.querySelector("h2 a, h3 a, .g-title a, a.a-link-normal[title]");
-    const title = (titleEl && (titleEl.getAttribute("title") || titleEl.textContent || "")).trim();
-    const url = absoluteUrl(titleEl && titleEl.getAttribute("href"));
+    try {
+      // タイトルとURL（複数パターンを順に試す）
+      const titleEl =
+        el.querySelector('a[id^="itemName_"]') ||
+        el.querySelector("h2 a[href], h3 a[href]") ||
+        el.querySelector('a.a-link-normal[title][href]') ||
+        el.querySelector('a[href*="/dp/"]');
+      let title = textOf(titleEl);
+      if (!title) title = textOf(el.querySelector('[id^="itemName_"]'));
+      const url = absoluteUrl(titleEl && titleEl.getAttribute("href"));
 
-    // 価格
-    const priceEl =
-      el.querySelector('[id^="itemPrice_"] .a-offscreen') ||
-      el.querySelector(".a-price .a-offscreen") ||
-      el.querySelector('[id^="itemPrice_"]') ||
-      el.querySelector(".a-color-price");
-    const price = parsePrice(priceEl && priceEl.textContent);
+      // 価格
+      const priceEl =
+        el.querySelector('[id^="itemPrice_"] .a-offscreen') ||
+        el.querySelector(".a-price .a-offscreen") ||
+        el.querySelector('[id^="itemPrice_"]') ||
+        el.querySelector(".a-color-price");
+      const price = parsePrice(priceEl && priceEl.textContent);
 
-    // 画像
-    const imgEl = el.querySelector("img");
-    const image = imgEl ? imgEl.getAttribute("src") || "" : "";
+      // 画像
+      const imgEl = el.querySelector("img");
+      const image = imgEl ? imgEl.getAttribute("src") || "" : "";
 
-    if (!title) return null;
-    return { title, price, url, image };
+      if (!title) return null;
+      return { title, price, url, image };
+    } catch (e) {
+      return null; // 1件の失敗で全体を止めない
+    }
   }
 
   // --- 実行 ---

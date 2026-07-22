@@ -130,10 +130,24 @@
       </div>
       <div class="modal-body">
         <div class="tabs" id="import-tabs">
-          <button class="tab active" data-tab="paste">貼り付け</button>
+          <button class="tab active" data-tab="amazon">Amazonから</button>
+          <button class="tab" data-tab="paste">貼り付け</button>
           <button class="tab" data-tab="json">JSON</button>
         </div>
-        <div class="tab-panel" data-panel="paste">
+        <div class="tab-panel" data-panel="amazon">
+          <p class="hint">あなたのAmazonアカウントの欲しいものリストを、ログインしたまま安全に取り込みます。<br>
+            （このアプリはAmazonに直接アクセスできないため、あなたのブラウザで実行する小さなスクリプトを使います）</p>
+          <ol class="steps">
+            <li>下のボタンで<b>抽出スクリプトをコピー</b></li>
+            <li>ブラウザで<b>自分の欲しいものリスト</b>のページを開く</li>
+            <li><b>F12</b>（Macは⌘+Option+I）→「<b>Console</b>」タブを開く</li>
+            <li>貼り付けて<b>Enter</b>。自動で全商品を読み取り、結果がクリップボードにコピーされます</li>
+            <li>ここの「<b>JSON</b>」タブに貼り付けて「取り込む」</li>
+          </ol>
+          <button type="button" id="copy-extractor" class="btn btn-primary">📋 抽出スクリプトをコピー</button>
+          <p class="hint muted" style="margin-top:10px">※ スクリプトはあなたのブラウザ内でだけ動作し、データを外部へ送信しません。</p>
+        </div>
+        <div class="tab-panel hidden" data-panel="paste">
           <p class="hint">Amazonの欲しいものリスト画面からコピーしたテキストや、1行1商品のテキストを貼り付けてください。<br>
             価格（¥1,980 など）が含まれていれば自動で抽出し、タイトルからカテゴリを自動判定します。</p>
           <textarea id="paste-input" class="input" rows="10" placeholder="例）&#10;ソニー ワイヤレスノイズキャンセリングヘッドホン WH-1000XM5 ¥49,500&#10;人を動かす デール・カーネギー ￥1,650&#10;山善 電気ケトル 1.0L"></textarea>

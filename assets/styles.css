@@ -218,6 +218,9 @@ a:hover { text-decoration: underline; }
 
 .export-actions { display: flex; flex-direction: column; gap: 10px; }
 
+.steps { margin: 0 0 14px; padding-left: 20px; font-size: 13px; color: var(--text); }
+.steps li { margin-bottom: 6px; }
+
 /* 価格モーダル */
 .price-summary { display: flex; gap: 18px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
 .price-summary b { font-size: 18px; display: block; }

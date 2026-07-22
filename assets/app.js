@@ -42,6 +42,21 @@
   const yen = (n) => (n == null || isNaN(n)) ? "—" : "¥" + Number(n).toLocaleString("ja-JP");
   const PRIORITY_LABEL = { 3: "高", 2: "中", 1: "低" };
 
+  // Amazon 欲しいものリスト抽出スクリプト（コンソール貼り付け用）。
+  // 詳細版は tools/extract-wishlist.js にあり、これはコピーボタン用の同等版。
+  const EXTRACTOR_SRC = `/* Amazon 欲しいものリスト抽出スクリプト — 欲しいもの整理アプリ用 */
+(async function(){"use strict";const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+async function loadAll(){let last=-1;for(let i=0;i<60;i++){const items=document.querySelectorAll('#g-items > li, ul[id="g-items"] > li');window.scrollTo(0,document.body.scrollHeight);await sleep(700);const done=document.querySelector('#endOfListMarker');const c=items.length;if(done&&c===last)break;if(c===last&&i>1)break;last=c;}window.scrollTo(0,0);}
+function price(t){if(!t)return null;const m=t.replace(/,/g,'').match(/[¥￥]?\\s*(\\d+)(?:\\s*円)?/);return m?Number(m[1]):null;}
+function abs(h){if(!h)return'';try{return new URL(h,location.origin).href.split('?')[0];}catch(e){return h;}}
+function pick(el){const t=el.querySelector('a[id^="itemName_"]')||el.querySelector('h2 a, h3 a, .g-title a, a.a-link-normal[title]');const title=(t&&(t.getAttribute('title')||t.textContent||'')).trim();const url=abs(t&&t.getAttribute('href'));const p=el.querySelector('[id^="itemPrice_"] .a-offscreen')||el.querySelector('.a-price .a-offscreen')||el.querySelector('[id^="itemPrice_"]')||el.querySelector('.a-color-price');const price_=price(p&&p.textContent);const img=el.querySelector('img');const image=img?(img.getAttribute('src')||''):'';if(!title)return null;return{title,price:price_,url,image};}
+console.log('%c欲しいものリストを読み込み中…','font-size:14px;color:#146eb4');await loadAll();
+const nodes=document.querySelectorAll('#g-items > li, ul[id="g-items"] > li');const items=[];nodes.forEach(el=>{const it=pick(el);if(it)items.push(it);});
+if(!items.length){console.warn('商品が見つかりませんでした。欲しいものリストのページで、ページを再読み込みしてから再実行してください。');return;}
+const json=JSON.stringify(items,null,2);
+try{await navigator.clipboard.writeText(json);console.log('%c✅ '+items.length+'件を抽出しクリップボードにコピーしました！アプリの［取り込み→JSON］に貼り付けてください。','font-size:14px;color:#1e7e34;font-weight:bold');}catch(e){console.log('%c✅ '+items.length+'件を抽出しました（自動コピー失敗）。下の出力をコピーしてください。','color:#a9700a');}
+console.log(json);console.table(items.map(i=>({title:i.title.slice(0,40),price:i.price})));return items;})();`;
+
   // Amazon URL から ASIN(10桁) を抽出。
   function extractAsin(url) {
     if (!url) return null;
@@ -440,6 +455,10 @@
 
   function runImport() {
     const activeTab = $("#import-tabs .tab.active").dataset.tab;
+    if (activeTab === "amazon") {
+      toast("「JSON」タブに、抽出したデータを貼り付けてください", true);
+      return;
+    }
     const replace = $("#import-replace").checked;
     let parsed = [];
     try {
@@ -547,6 +566,21 @@
 
     $("#import-btn").addEventListener("click", () => openModal("#import-modal"));
     $("#import-run").addEventListener("click", runImport);
+    $("#copy-extractor").addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(EXTRACTOR_SRC);
+        toast("スクリプトをコピーしました。Amazonのリストで貼り付けてください");
+      } catch {
+        // クリップボード不可の環境では選択して手動コピーできるようにする
+        const ta = document.createElement("textarea");
+        ta.value = EXTRACTOR_SRC;
+        ta.style.cssText = "position:fixed;top:10%;left:5%;width:90%;height:60%;z-index:200";
+        document.body.appendChild(ta);
+        ta.focus(); ta.select();
+        toast("手動でコピーしてください（Ctrl/Cmd+C）", true);
+        setTimeout(() => ta.remove(), 8000);
+      }
+    });
     $$("#import-tabs .tab").forEach((tab) => tab.addEventListener("click", () => {
       $$("#import-tabs .tab").forEach((t) => t.classList.remove("active"));
       tab.classList.add("active");

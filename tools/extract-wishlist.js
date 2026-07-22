@@ -108,18 +108,28 @@
 
   const json = JSON.stringify(items, null, 2);
 
-  // クリップボードへコピー（失敗しても console から手動コピー可能）
+  // 後から手動コピーできるよう、結果を window に保持
+  window.__wishlistData = json;
+
+  // クリップボードへコピー。DevTools の copy() が最も確実（フォーカス不要）。
+  let copied = false;
   try {
-    await navigator.clipboard.writeText(json);
+    if (typeof copy === "function") { copy(json); copied = true; }
+  } catch (e) { /* copy() が無い環境 */ }
+  if (!copied) {
+    try { await navigator.clipboard.writeText(json); copied = true; } catch (e) { /* フォーカス無し等 */ }
+  }
+
+  if (copied) {
     console.log(
       `%c✅ ${items.length}件を抽出し、クリップボードにコピーしました！\n` +
       `「欲しいもの整理」アプリの［取り込み → JSON］に貼り付けてください。`,
       "font-size:14px;color:#1e7e34;font-weight:bold"
     );
-  } catch (e) {
+  } else {
     console.log(
-      `%c✅ ${items.length}件を抽出しました（自動コピーは失敗）。\n` +
-      `下の出力を選択してコピーしてください。`,
+      `%c✅ ${items.length}件を抽出しました。自動コピーができなかったので、\n` +
+      `次の1行を実行してコピーしてください →  copy(__wishlistData)`,
       "font-size:14px;color:#a9700a;font-weight:bold"
     );
   }

@@ -641,8 +641,8 @@ function pick(el){try{const t=el.querySelector('a[id^="itemName_"]')||el.querySe
 console.log('%c欲しいものリストを読み込み中…','font-size:14px;color:#146eb4');await loadAll();
 const nodes=document.querySelectorAll('#g-items > li, ul[id="g-items"] > li');const items=[];nodes.forEach(el=>{const it=pick(el);if(it)items.push(it);});
 if(!items.length){console.warn('商品が見つかりませんでした。欲しいものリストのページで、ページを再読み込みしてから再実行してください。');return;}
-const json=JSON.stringify(items,null,2);
-try{await navigator.clipboard.writeText(json);console.log('%c✅ '+items.length+'件を抽出しクリップボードにコピーしました！アプリの［取り込み→JSON］に貼り付けてください。','font-size:14px;color:#1e7e34;font-weight:bold');}catch(e){console.log('%c✅ '+items.length+'件を抽出しました（自動コピー失敗）。下の出力をコピーしてください。','color:#a9700a');}
+const json=JSON.stringify(items,null,2);window.__wishlistData=json;let copied=false;try{if(typeof copy==='function'){copy(json);copied=true;}}catch(e){}if(!copied){try{await navigator.clipboard.writeText(json);copied=true;}catch(e){}}
+if(copied){console.log('%c✅ '+items.length+'件を抽出しクリップボードにコピーしました！アプリの［取り込み→JSON］に貼り付けてください。','font-size:14px;color:#1e7e34;font-weight:bold');}else{console.log('%c✅ '+items.length+'件を抽出しました。次の1行でコピー →  copy(__wishlistData)','font-size:14px;color:#a9700a;font-weight:bold');}
 console.log(json);console.table(items.map(i=>({title:i.title.slice(0,40),price:i.price})));return items;})();`;
 
   // Amazon URL から ASIN(10桁) を抽出。

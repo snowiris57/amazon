@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>欲しいもの整理 — Wishlist Organizer</title>
+  <link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="brand">
+        <span class="brand-mark">🗂️</span>
+        <div>
+          <h1>欲しいもの整理</h1>
+          <p class="tagline">Amazonの欲しいものリストを分類して見やすく</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button id="theme-toggle" class="icon-btn" title="テーマ切替" aria-label="テーマ切替">🌙</button>
+        <button id="add-btn" class="btn btn-primary">＋ アイテムを追加</button>
+      </div>
+    </div>
+    <div class="stats-bar" id="stats-bar"></div>
+  </header>
+
+  <main class="container">
+    <section class="toolbar">
+      <div class="toolbar-group grow">
+        <input type="search" id="search" class="input" placeholder="🔍 タイトル・メモで検索…" />
+      </div>
+      <div class="toolbar-group">
+        <select id="filter-category" class="input" title="カテゴリで絞り込み"></select>
+        <select id="sort" class="input" title="並べ替え">
+          <option value="added-desc">追加順（新しい）</option>
+          <option value="added-asc">追加順（古い）</option>
+          <option value="price-desc">価格（高い順）</option>
+          <option value="price-asc">価格（安い順）</option>
+          <option value="priority">優先度</option>
+          <option value="name">名前順</option>
+        </select>
+        <div class="segmented" role="group" aria-label="表示切替">
+          <button class="seg-btn active" data-view="grouped">カテゴリ別</button>
+          <button class="seg-btn" data-view="flat">一覧</button>
+        </div>
+        <label class="checkbox-inline">
+          <input type="checkbox" id="hide-purchased" /> 購入済みを隠す
+        </label>
+      </div>
+      <div class="toolbar-group">
+        <button id="import-btn" class="btn">取り込み</button>
+        <button id="export-btn" class="btn">書き出し</button>
+      </div>
+    </section>
+
+    <div id="list-root" class="list-root"></div>
+
+    <div id="empty-state" class="empty-state hidden">
+      <div class="empty-emoji">📝</div>
+      <h2>まだアイテムがありません</h2>
+      <p>「アイテムを追加」から登録するか、「取り込み」でまとめて追加できます。</p>
+      <div class="empty-actions">
+        <button class="btn btn-primary" data-open="add">アイテムを追加</button>
+        <button class="btn" data-open="import">まとめて取り込み</button>
+        <button class="btn btn-ghost" id="load-sample">サンプルを読み込む</button>
+      </div>
+    </div>
+  </main>
+
+  <!-- 追加・編集モーダル -->
+  <div class="modal-backdrop hidden" id="item-modal">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="item-modal-title">
+      <div class="modal-head">
+        <h2 id="item-modal-title">アイテムを追加</h2>
+        <button class="icon-btn" data-close aria-label="閉じる">✕</button>
+      </div>
+      <form id="item-form" class="modal-body">
+        <input type="hidden" id="f-id" />
+        <label class="field">
+          <span>タイトル <em>*</em></span>
+          <input type="text" id="f-title" class="input" required maxlength="300" />
+        </label>
+        <div class="field-row">
+          <label class="field">
+            <span>価格（円）</span>
+            <input type="number" id="f-price" class="input" min="0" step="1" inputmode="numeric" />
+          </label>
+          <label class="field">
+            <span>優先度</span>
+            <select id="f-priority" class="input">
+              <option value="3">高</option>
+              <option value="2" selected>中</option>
+              <option value="1">低</option>
+            </select>
+          </label>
+        </div>
+        <label class="field">
+          <span>URL</span>
+          <input type="url" id="f-url" class="input" placeholder="https://www.amazon.co.jp/..." />
+        </label>
+        <label class="field">
+          <span>画像URL</span>
+          <input type="url" id="f-image" class="input" placeholder="任意" />
+        </label>
+        <label class="field">
+          <span>カテゴリ</span>
+          <div class="field-row">
+            <select id="f-category" class="input grow"></select>
+            <button type="button" id="auto-cat" class="btn" title="タイトルから自動判定">自動判定</button>
+          </div>
+        </label>
+        <label class="field">
+          <span>メモ</span>
+          <textarea id="f-note" class="input" rows="2" maxlength="500"></textarea>
+        </label>
+        <div class="modal-foot">
+          <button type="button" class="btn" data-close>キャンセル</button>
+          <button type="submit" class="btn btn-primary">保存</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 取り込みモーダル -->
+  <div class="modal-backdrop hidden" id="import-modal">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="import-modal-title">
+      <div class="modal-head">
+        <h2 id="import-modal-title">まとめて取り込み</h2>
+        <button class="icon-btn" data-close aria-label="閉じる">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="tabs" id="import-tabs">
+          <button class="tab active" data-tab="paste">貼り付け</button>
+          <button class="tab" data-tab="json">JSON</button>
+        </div>
+        <div class="tab-panel" data-panel="paste">
+          <p class="hint">Amazonの欲しいものリスト画面からコピーしたテキストや、1行1商品のテキストを貼り付けてください。<br>
+            価格（¥1,980 など）が含まれていれば自動で抽出し、タイトルからカテゴリを自動判定します。</p>
+          <textarea id="paste-input" class="input" rows="10" placeholder="例）&#10;ソニー ワイヤレスノイズキャンセリングヘッドホン WH-1000XM5 ¥49,500&#10;人を動かす デール・カーネギー ￥1,650&#10;山善 電気ケトル 1.0L"></textarea>
+        </div>
+        <div class="tab-panel hidden" data-panel="json">
+          <p class="hint">このアプリで書き出したJSONを貼り付けて復元します。</p>
+          <textarea id="json-input" class="input" rows="10" placeholder='[ { "title": "...", "price": 1000, "category": "..." } ]'></textarea>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <label class="checkbox-inline"><input type="checkbox" id="import-replace" /> 既存を置き換える</label>
+        <span class="spacer"></span>
+        <button type="button" class="btn" data-close>キャンセル</button>
+        <button type="button" id="import-run" class="btn btn-primary">取り込む</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 書き出しモーダル -->
+  <div class="modal-backdrop hidden" id="export-modal">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="export-modal-title">
+      <div class="modal-head">
+        <h2 id="export-modal-title">書き出し</h2>
+        <button class="icon-btn" data-close aria-label="閉じる">✕</button>
+      </div>
+      <div class="modal-body">
+        <p class="hint">現在のリストをファイルに保存できます。</p>
+        <div class="export-actions">
+          <button class="btn btn-primary" id="export-json">JSONで保存（バックアップ）</button>
+          <button class="btn" id="export-csv">CSVで保存（表計算用）</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 価格履歴モーダル -->
+  <div class="modal-backdrop hidden" id="price-modal">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="price-modal-title">
+      <div class="modal-head">
+        <h2 id="price-modal-title">価格の推移</h2>
+        <button class="icon-btn" data-close aria-label="閉じる">✕</button>
+      </div>
+      <div class="modal-body" id="price-modal-body">
+        <!-- JSで描画 -->
+      </div>
+      <div class="modal-foot">
+        <form id="price-add-form" class="price-add">
+          <input type="number" id="price-add-value" class="input" min="0" step="1" placeholder="今の価格を記録（円）" inputmode="numeric" />
+          <button type="submit" class="btn btn-primary">記録</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="assets/categories.js"></script>
+  <script src="assets/app.js"></script>
+</body>
+</html>

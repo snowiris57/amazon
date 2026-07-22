@@ -46,7 +46,7 @@
   // 詳細版は tools/extract-wishlist.js にあり、これはコピーボタン用の同等版。
   const EXTRACTOR_SRC = `/* Amazon 欲しいものリスト抽出スクリプト — 欲しいもの整理アプリ用 */
 (async function(){"use strict";const sleep=ms=>new Promise(r=>setTimeout(r,ms));
-async function loadAll(){let last=-1;for(let i=0;i<60;i++){const items=document.querySelectorAll('#g-items > li, ul[id="g-items"] > li');window.scrollTo(0,document.body.scrollHeight);await sleep(700);const done=document.querySelector('#endOfListMarker');const c=items.length;if(done&&c===last)break;if(c===last&&i>1)break;last=c;}window.scrollTo(0,0);}
+async function loadAll(){let last=-1,stable=0;for(let i=0;i<300;i++){window.scrollTo(0,document.body.scrollHeight);await sleep(700);const c=document.querySelectorAll('#g-items > li, ul[id="g-items"] > li').length;if(c===last){stable++;if(stable>=3||document.querySelector('#endOfListMarker'))break;}else{stable=0;}last=c;console.log('%c読み込み中… '+c+'件','color:#146eb4');}window.scrollTo(0,0);}
 function price(t){if(!t)return null;const m=t.replace(/,/g,'').match(/[¥￥]?\\s*(\\d+)(?:\\s*円)?/);return m?Number(m[1]):null;}
 function abs(h){if(!h)return'';try{return new URL(h,location.origin).href.split('?')[0];}catch(e){return h;}}
 function txt(n){if(!n)return'';return((n.getAttribute&&n.getAttribute('title'))||n.textContent||'').trim();}

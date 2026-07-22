@@ -22,18 +22,20 @@
   // --- 1. 遅延読み込み対策：最後まで自動スクロール ---
   async function loadAll() {
     let lastCount = -1;
-    for (let i = 0; i < 60; i++) {
-      const items = document.querySelectorAll('#g-items > li, ul[id="g-items"] > li');
+    let stable = 0;
+    for (let i = 0; i < 300; i++) {
       window.scrollTo(0, document.body.scrollHeight);
       await sleep(700);
-      const done = document.querySelector("#endOfListMarker");
-      const count = items.length;
-      if (done && count === lastCount) break;
+      const count = document.querySelectorAll('#g-items > li, ul[id="g-items"] > li').length;
       if (count === lastCount) {
-        // 2回連続で増えなければ終了
-        if (i > 1) break;
+        // 件数が増えなくなったら（3回連続 or 終端マーカー）読み込み完了
+        stable++;
+        if (stable >= 3 || document.querySelector("#endOfListMarker")) break;
+      } else {
+        stable = 0;
       }
       lastCount = count;
+      console.log(`%c読み込み中… ${count}件`, "color:#146eb4");
     }
     window.scrollTo(0, 0);
   }
